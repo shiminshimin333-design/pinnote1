@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #2D2727;
+    background-color: #FAF7F2;
+  }
+}
+
+/* Custom Pinterest Aesthetic Font Utilities */
+.font-caveat {
+  font-family: 'Caveat', cursive;
+}
+.font-indie {
+  font-family: 'Indie Flower', cursive;
+}
+.font-patrick {
+  font-family: 'Patrick Hand', cursive;
+}
+.font-reenie {
+  font-family: 'Reenie Beanie', cursive;
+}
+.font-playfair {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+.font-courier {
+  font-family: 'Courier Prime', Courier, monospace;
+}
+.font-jakarta {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Notebook lined background */
+.bg-notebook-ruled {
+  background-size: 100% 28px;
+  background-image: linear-gradient(to bottom, transparent 27px, #e8dfd8 28px);
+}
+
+.bg-notebook-grid {
+  background-size: 24px 24px;
+  background-image: 
+    linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+}
+
+.bg-dot-grid {
+  background-size: 20px 20px;
+  background-image: radial-gradient(circle, rgba(160, 140, 130, 0.25) 1px, transparent 1px);
+}
+
+.bg-corkboard {
+  background-color: #D4B08C;
+  background-image: radial-gradient(#C69C72 15%, transparent 16%), radial-gradient(#B88B5E 15%, transparent 16%);
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 10px;
+}
+
+/* Torn paper edge effect */
+.torn-bottom {
+  clip-path: polygon(
+    0% 0%, 100% 0%, 100% 95%,
+    95% 97%, 90% 94%, 85% 98%, 80% 95%, 75% 98%, 70% 94%, 65% 97%, 60% 94%, 55% 98%,
+    50% 94%, 45% 97%, 40% 95%, 35% 98%, 30% 95%, 25% 97%, 20% 94%, 15% 98%, 10% 95%,
+    5% 97%, 0% 95%
+  );
+}
+
+/* Aesthetic shadow */
+.shadow-pin {
+  box-shadow: 0 10px 25px -5px rgba(90, 70, 60, 0.12), 0 8px 10px -6px rgba(90, 70, 60, 0.08);
+}
+.shadow-polaroid {
+  box-shadow: 0 14px 35px -8px rgba(70, 50, 40, 0.18), 0 4px 12px -2px rgba(70, 50, 40, 0.1);
+}
+.shadow-pinhead {
+  filter: drop-shadow(0 4px 6px rgba(60, 20, 20, 0.35));
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #E2D7CE;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #CBBDB3;
+}

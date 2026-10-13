@@ -1,0 +1,6 @@
+{
+  "name": "PinNotes - Aesthetic Moodboard & AI Notebook",
+  "description": "A Pinterest-inspired aesthetic note-taking canvas with handwritten pens, sticky notes, moodboards, washi tapes, web clipping, and an intelligent AI explanation companion.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
