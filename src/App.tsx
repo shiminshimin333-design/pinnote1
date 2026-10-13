@@ -15,11 +15,12 @@ import { MasonryGrid } from './components/MasonryGrid';
 import { FreeformCanvas } from './components/FreeformCanvas';
 import { SlideNoteStudio } from './components/SlideNoteStudio';
 import { SlideViewerModal } from './components/SlideViewerModal';
+import { NoteEditorModal } from './components/NoteEditorModal';
 import { UserProfileModal } from './components/UserProfileModal';
 import { DrawingCanvasModal } from './components/DrawingCanvasModal';
 import { WebUploadModal } from './components/WebUploadModal';
 import { AIExplainerModal } from './components/AIExplainerModal';
-import { Sparkles, PenTool, Globe, Plus, Layers, User } from 'lucide-react';
+import { Sparkles, PenTool, Globe, Plus, Layers, StickyNote } from 'lucide-react';
 
 const STORAGE_KEY_PINS = 'pinnotes_aesthetic_pins_v2';
 const STORAGE_KEY_BOARDS = 'pinnotes_aesthetic_boards_v2';
@@ -101,6 +102,8 @@ export default function App() {
   // Modals state
   const [isSlideStudioOpen, setIsSlideStudioOpen] = useState(false);
   const [studioInitialNote, setStudioInitialNote] = useState<PinItem | null>(null);
+
+  const [isQuickStickyOpen, setIsQuickStickyOpen] = useState(false);
 
   const [isSlideViewerOpen, setIsSlideViewerOpen] = useState(false);
   const [viewingSlidePin, setViewingSlidePin] = useState<PinItem | null>(null);
@@ -196,7 +199,7 @@ export default function App() {
         id: `pin-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         boardId: activeBoardId,
         type: noteData.type || (noteData.slides && noteData.slides.length > 1 ? 'slide-deck' : 'sticky'),
-        title: noteData.title || 'Untitled Note',
+        title: noteData.title || 'Untitled Note 🌸',
         content: noteData.content || '',
         color: noteData.color || '#FFFDF9',
         fontFamily: noteData.fontFamily || 'font-caveat',
@@ -222,6 +225,35 @@ export default function App() {
       fireConfetti();
     }
     setStudioInitialNote(null);
+  };
+
+  // Quick Sticky Note save
+  const handleSaveQuickSticky = (noteData: Partial<PinItem>) => {
+    const newPin: PinItem = {
+      id: `pin-sticky-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      boardId: activeBoardId,
+      type: noteData.checklist && noteData.checklist.length > 0 ? 'checklist' : 'sticky',
+      title: noteData.title || 'Sticky Note 🌸',
+      content: noteData.content || '',
+      color: noteData.color || '#FEF08A',
+      fontFamily: noteData.fontFamily || 'font-caveat',
+      fontSize: noteData.fontSize || 'lg',
+      washiTape: noteData.washiTape || 'polka',
+      pinType: noteData.pinType || 'red-pin',
+      rotation: (Math.random() - 0.5) * 3,
+      position: {
+        x: 60 + Math.floor(Math.random() * 400),
+        y: 80 + Math.floor(Math.random() * 300),
+      },
+      size: { width: 320, height: 320 },
+      tags: noteData.tags || ['StickyNote'],
+      createdAt: Date.now(),
+      checklist: noteData.checklist,
+      author: currentUser,
+      isPublic: true,
+    };
+    setPins((prev) => [newPin, ...prev]);
+    fireConfetti();
   };
 
   const handleDeletePin = (id: string) => {
@@ -474,6 +506,7 @@ export default function App() {
           setStudioInitialNote(null);
           setIsSlideStudioOpen(true);
         }}
+        onOpenQuickSticky={() => setIsQuickStickyOpen(true)}
         onOpenDrawing={() => handleOpenDrawing()}
         onOpenWebUpload={() => setIsWebUploadOpen(true)}
         onOpenAIExplainer={() => {
@@ -533,16 +566,25 @@ export default function App() {
             setStudioInitialNote(null);
             setIsSlideStudioOpen(true);
           }}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#E11D48] text-white text-xs font-bold shadow-xs hover:bg-[#BE123C] transition-all hover:scale-105"
-          title="Create Multi-Slide Aesthetic Note"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#E11D48] text-white text-xs font-bold shadow-xs hover:bg-[#BE123C] transition-all hover:scale-105 cursor-pointer"
+          title="Create Multi-Slide Aesthetic Note Spread"
         >
           <Layers className="w-3.5 h-3.5" />
-          <span>Create Note & Slide</span>
+          <span>+ Slide Deck</span>
+        </button>
+
+        <button
+          onClick={() => setIsQuickStickyOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FEF08A] hover:bg-[#FDE047] text-[#713F12] text-xs font-bold shadow-2xs transition-all hover:scale-105 cursor-pointer"
+          title="Create Quick Pastel Sticky Note"
+        >
+          <StickyNote className="w-3.5 h-3.5" />
+          <span>Sticky Note</span>
         </button>
 
         <button
           onClick={() => handleOpenDrawing()}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-[#F2ECE4] text-[#3C2F2B] text-xs font-semibold transition-all hover:scale-105"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-[#F2ECE4] text-[#3C2F2B] text-xs font-semibold transition-all hover:scale-105 cursor-pointer"
           title="Freehand Pens & Doodles"
         >
           <PenTool className="w-3.5 h-3.5 text-[#8C5E47]" />
@@ -551,7 +593,7 @@ export default function App() {
 
         <button
           onClick={() => setIsWebUploadOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-[#F2ECE4] text-[#3C2F2B] text-xs font-semibold transition-all hover:scale-105"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-[#F2ECE4] text-[#3C2F2B] text-xs font-semibold transition-all hover:scale-105 cursor-pointer"
           title="Upload from Web or Device"
         >
           <Globe className="w-3.5 h-3.5 text-[#8C5E47]" />
@@ -560,11 +602,11 @@ export default function App() {
 
         <button
           onClick={() => setIsProfileModalOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-[#F2ECE4] text-[#3C2F2B] text-xs font-semibold transition-all hover:scale-105"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-[#F2ECE4] text-[#3C2F2B] text-xs font-semibold transition-all hover:scale-105 cursor-pointer"
           title="Personalize Profile for Public"
         >
           <span>{currentUser.avatar || '🌸'}</span>
-          <span className="hidden sm:inline">Profile</span>
+          <span className="hidden sm:inline font-bold">{currentUser.name || 'Profile'}</span>
         </button>
 
         <div className="w-px h-4 bg-stone-300 mx-0.5" />
@@ -574,7 +616,7 @@ export default function App() {
             setAiTargetNote(null);
             setIsAIExplainerOpen(true);
           }}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#FFF1F2] to-[#FFE4E6] border border-[#FECDD3] text-[#E11D48] text-xs font-bold shadow-2xs hover:shadow-xs transition-all hover:scale-105"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#FFF1F2] to-[#FFE4E6] border border-[#FECDD3] text-[#E11D48] text-xs font-bold shadow-2xs hover:shadow-xs transition-all hover:scale-105 cursor-pointer"
           title="Ask AI to explain anything you don't understand"
         >
           <Sparkles className="w-3.5 h-3.5 text-[#E11D48] animate-pulse" />
@@ -593,6 +635,13 @@ export default function App() {
         initialNote={studioInitialNote}
         currentUser={currentUser}
         onEditProfile={() => setIsProfileModalOpen(true)}
+      />
+
+      {/* Quick Pastel Sticky Note Modal */}
+      <NoteEditorModal
+        isOpen={isQuickStickyOpen}
+        onClose={() => setIsQuickStickyOpen(false)}
+        onSave={handleSaveQuickSticky}
       />
 
       {/* Slide Presentation Carousel Viewer */}

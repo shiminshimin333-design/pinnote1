@@ -34,6 +34,7 @@ interface BoardHeaderProps {
   currentUser: UserProfile;
   onOpenProfileModal: () => void;
   onOpenNewNote: () => void;
+  onOpenQuickSticky?: () => void;
   onOpenDrawing: () => void;
   onOpenWebUpload: () => void;
   onOpenAIExplainer: () => void;
@@ -69,6 +70,7 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
   currentUser,
   onOpenProfileModal,
   onOpenNewNote,
+  onOpenQuickSticky,
   onOpenDrawing,
   onOpenWebUpload,
   onOpenAIExplainer,
@@ -232,13 +234,26 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
             <span className="hidden sm:inline">Handwrite</span>
           </button>
 
-          {/* + New Sticky Note */}
+          {/* Quick Sticky Note */}
+          {onOpenQuickSticky && (
+            <button
+              onClick={onOpenQuickSticky}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#FEF08A] hover:bg-[#FDE047] text-[#713F12] text-xs font-bold shadow-2xs transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              title="Quick Pastel Sticky Note"
+            >
+              <span>🟨</span>
+              <span className="hidden sm:inline">Sticky</span>
+            </button>
+          )}
+
+          {/* + New Slide Note Spread */}
           <button
             onClick={onOpenNewNote}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E11D48] hover:bg-[#BE123C] text-white text-xs font-bold shadow-md shadow-rose-200 transition-all hover:scale-105 active:scale-95"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E11D48] hover:bg-[#BE123C] text-white text-xs font-bold shadow-md shadow-rose-200 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            title="Create Multi-Slide Note Spread"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Note</span>
+            <span>+ Slide Deck</span>
           </button>
         </div>
       </div>

@@ -87,6 +87,31 @@ const INK_COLORS = [
 
 const CUTE_STICKERS = ['🌸', '☕', '⭐', '💖', '🌿', '🥐', '🎀', '✨', '📌', '📖', '🍵', '🕯️'];
 
+const createDefaultSlide = (): NoteSlide => ({
+  id: `slide-${Date.now()}-1`,
+  title: 'My Aesthetic Note 🌸',
+  content: 'Type your notes, study insights, or recipes here with aesthetic handwriting fonts...',
+  fontFamily: 'font-caveat',
+  fontSize: 'lg',
+  color: '#FFFDF9',
+  paperStyle: 'ruled',
+  washiTape: 'polka',
+  pinType: 'red-pin',
+  checklist: [],
+  stickies: [
+    {
+      id: `sticky-${Date.now()}`,
+      text: 'Quick formula / thought ✨',
+      color: '#FEF08A',
+      fontFamily: 'font-indie',
+      position: { x: 380, y: 30 },
+      rotation: 2.5,
+      washiTape: 'pink',
+    },
+  ],
+  stickers: [{ id: `stk-1`, emoji: '🌸', position: { x: 340, y: 15 }, size: 24 }],
+});
+
 export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
   isOpen,
   onClose,
@@ -95,12 +120,12 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
   currentUser,
   onEditProfile,
 }) => {
-  // Slides state
-  const [slides, setSlides] = useState<NoteSlide[]>([]);
+  // Slides state with safe non-empty initial array
+  const [slides, setSlides] = useState<NoteSlide[]>(() => [createDefaultSlide()]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
   // Deck level metadata
-  const [deckTitle, setDeckTitle] = useState('');
+  const [deckTitle, setDeckTitle] = useState('My Aesthetic Note');
   const [tagsInput, setTagsInput] = useState('Study, Aesthetic');
   const [isPublic, setIsPublic] = useState(true);
 
@@ -119,7 +144,6 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiOutput, setAiOutput] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiMode, setAiMode] = useState<'eli5' | 'deep-dive' | 'bullet-summary' | 'quiz'>('eli5');
 
   // Upload modal / image input
   const [uploadUrlInput, setUploadUrlInput] = useState('');
@@ -131,7 +155,7 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
 
     if (initialNote && initialNote.slides && initialNote.slides.length > 0) {
       setSlides(JSON.parse(JSON.stringify(initialNote.slides)));
-      setDeckTitle(initialNote.title || '');
+      setDeckTitle(initialNote.title || 'My Aesthetic Note');
       setTagsInput(initialNote.tags ? initialNote.tags.join(', ') : 'Study');
       setIsPublic(initialNote.isPublic ?? true);
       setCurrentSlideIndex(0);
@@ -139,12 +163,12 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
       // Convert single note into slide 1
       const s1: NoteSlide = {
         id: `slide-${Date.now()}-1`,
-        title: initialNote.title || 'Slide 1',
+        title: initialNote.title || 'My Note',
         content: initialNote.content || '',
         fontFamily: initialNote.fontFamily || 'font-caveat',
         fontSize: initialNote.fontSize || 'lg',
         color: initialNote.color || '#FFFDF9',
-        paperStyle: 'linen',
+        paperStyle: 'ruled',
         washiTape: initialNote.washiTape || 'polka',
         pinType: initialNote.pinType || 'red-pin',
         drawingData: initialNote.drawingData,
@@ -159,40 +183,19 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
       setIsPublic(initialNote.isPublic ?? true);
       setCurrentSlideIndex(0);
     } else {
-      // Brand new note starting with Slide 1
-      const initialSlide: NoteSlide = {
-        id: `slide-${Date.now()}-1`,
-        title: 'Title of My Note 🌸',
-        content: 'Type your handwritten notes, study insights, recipes, or ideas here...',
-        fontFamily: 'font-caveat',
-        fontSize: 'lg',
-        color: '#FFFDF9',
-        paperStyle: 'ruled',
-        washiTape: 'polka',
-        pinType: 'red-pin',
-        checklist: [],
-        stickies: [
-          {
-            id: `sticky-${Date.now()}`,
-            text: 'Key formula / reminder ⭐',
-            color: '#FEF08A',
-            fontFamily: 'font-indie',
-            position: { x: 420, y: 40 },
-            rotation: 2.5,
-            washiTape: 'pink',
-          },
-        ],
-        stickers: [{ id: `stk-1`, emoji: '🌸', position: { x: 380, y: 15 }, size: 24 }],
-      };
+      // Brand new note starting with default slide
+      const initialSlide = createDefaultSlide();
       setSlides([initialSlide]);
-      setDeckTitle('Aesthetic Note Spread');
+      setDeckTitle('My Aesthetic Note 🌸');
       setTagsInput('Aesthetic, Notes');
       setIsPublic(true);
       setCurrentSlideIndex(0);
     }
   }, [isOpen, initialNote]);
 
-  const currentSlide = slides[currentSlideIndex] || slides[0];
+  // Always compute safe current slide with fallbacks
+  const safeSlide = createDefaultSlide();
+  const currentSlide = slides[currentSlideIndex] || slides[0] || safeSlide;
 
   // Helper to update current slide
   const updateCurrentSlide = (updates: Partial<NoteSlide>) => {
@@ -236,7 +239,6 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Load existing drawingData if any
     const rect = canvas.getBoundingClientRect();
     canvas.width = rect.width * 2;
     canvas.height = rect.height * 2;
@@ -331,7 +333,6 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
     setIsDrawing(false);
     lastPointRef.current = null;
 
-    // Save to slide drawingData
     const canvas = canvasRef.current;
     if (canvas) {
       const dataUrl = canvas.toDataURL('image/png');
@@ -351,7 +352,7 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
   // Sticky notes on slide
   const handleAddSlideSticky = (color = '#FEF08A') => {
     const newSticky: SlideSticky = {
-      id: `sticky-${Date.now()}-${Math.random()}`,
+      id: `sticky-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       text: 'New thought / formula ✨',
       color,
       fontFamily: 'font-indie',
@@ -381,7 +382,7 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
   // Stickers on slide
   const handleAddSticker = (emoji: string) => {
     const newStk: SlideSticker = {
-      id: `stk-${Date.now()}-${Math.random()}`,
+      id: `stk-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       emoji,
       position: { x: 50 + Math.floor(Math.random() * 350), y: 30 + Math.floor(Math.random() * 250) },
       size: 26,
@@ -393,7 +394,7 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
 
   // AI Assistant within Slide
   const handleAskAI = async (mode: 'eli5' | 'deep-dive' | 'bullet-summary' | 'quiz' | 'custom') => {
-    const slideContent = `${currentSlide.title || ''}\n${currentSlide.content || ''}`;
+    const slideContent = `${currentSlide?.title || ''}\n${currentSlide?.content || ''}`;
     if (!slideContent.trim() && !aiPrompt.trim()) return;
 
     setAiLoading(true);
@@ -404,7 +405,7 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           content: slideContent,
-          title: currentSlide.title || deckTitle,
+          title: currentSlide?.title || deckTitle,
           mode,
           customQuestion: mode === 'custom' ? aiPrompt : undefined,
         }),
@@ -479,18 +480,17 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
       .map((t) => t.trim())
       .filter(Boolean);
 
-    // Primary preview content from slide 1
     const s1 = slides[0] || currentSlide;
 
     onSave({
       id: initialNote?.id,
-      title: deckTitle || s1.title || 'Aesthetic Slide Deck',
-      content: s1.content,
-      color: s1.color,
-      fontFamily: s1.fontFamily,
-      fontSize: s1.fontSize,
-      washiTape: s1.washiTape,
-      pinType: s1.pinType,
+      title: deckTitle.trim() || s1.title || 'Aesthetic Slide Note 🌸',
+      content: s1.content || '',
+      color: s1.color || '#FFFDF9',
+      fontFamily: s1.fontFamily || 'font-caveat',
+      fontSize: s1.fontSize || 'lg',
+      washiTape: s1.washiTape || 'polka',
+      pinType: s1.pinType || 'red-pin',
       drawingData: s1.drawingData,
       imageUrl: s1.imageUrl,
       type: 'slide-deck',
@@ -517,9 +517,9 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
               className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FAF7F2] hover:bg-[#F2ECE4] border border-[#E7DFD5] text-xs transition-transform hover:scale-102"
               title="Personalize your public creator profile"
             >
-              <span className="text-base">{currentUser.avatar || '🌸'}</span>
-              <span className="font-bold text-[#3C2F2B]">{currentUser.name || 'Anonymous Creator'}</span>
-              <span className="text-[10px] text-[#8C7A70] font-mono">{currentUser.handle || '@curator'}</span>
+              <span className="text-base">{currentUser?.avatar || '🌸'}</span>
+              <span className="font-bold text-[#3C2F2B]">{currentUser?.name || 'shimin'}</span>
+              <span className="text-[10px] text-[#8C7A70] font-mono">{currentUser?.handle || '@curator'}</span>
             </button>
 
             {/* Deck Title input */}
@@ -551,7 +551,7 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
             {/* Save & Publish */}
             <button
               onClick={handleFinalSave}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-full bg-[#E11D48] hover:bg-[#BE123C] text-white text-xs font-bold shadow-md shadow-rose-200 transition-all hover:scale-105 active:scale-95"
+              className="flex items-center gap-1.5 px-5 py-2 rounded-full bg-[#E11D48] hover:bg-[#BE123C] text-white text-xs font-bold shadow-md shadow-rose-200 transition-all hover:scale-105 active:scale-95 cursor-pointer"
             >
               <Check className="w-4 h-4" />
               <span>Pin & Publish Note</span>
@@ -687,7 +687,7 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
                         key={f.id}
                         onClick={() => updateCurrentSlide({ fontFamily: f.id })}
                         className={`w-full text-left px-3 py-2 rounded-xl transition-all ${
-                          currentSlide.fontFamily === f.id
+                          (currentSlide?.fontFamily || 'font-caveat') === f.id
                             ? 'bg-[#3C2F2B] text-white'
                             : 'hover:bg-[#FAF7F2] text-[#3C2F2B]'
                         }`}
@@ -709,7 +709,7 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
                         key={p.hex}
                         onClick={() => updateCurrentSlide({ color: p.hex, paperStyle: p.style })}
                         className={`h-8 rounded-xl border border-black/10 transition-transform ${
-                          currentSlide.color === p.hex ? 'ring-2 ring-stone-700 scale-105' : 'hover:scale-105'
+                          (currentSlide?.color || '#FFFDF9') === p.hex ? 'ring-2 ring-stone-700 scale-105' : 'hover:scale-105'
                         }`}
                         style={{ backgroundColor: p.hex }}
                         title={p.name}
@@ -724,7 +724,7 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
                     Washi Tape
                   </label>
                   <select
-                    value={currentSlide.washiTape}
+                    value={currentSlide?.washiTape || 'polka'}
                     onChange={(e) => updateCurrentSlide({ washiTape: e.target.value as WashiTapeStyle })}
                     className="w-full px-3 py-2 rounded-xl bg-[#FAF7F2] border border-[#E7DFD5] text-xs text-[#2D2727]"
                   >
@@ -744,7 +744,7 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
                     Pushpin Style
                   </label>
                   <select
-                    value={currentSlide.pinType}
+                    value={currentSlide?.pinType || 'red-pin'}
                     onChange={(e) => updateCurrentSlide({ pinType: e.target.value as PinStyle })}
                     className="w-full px-3 py-2 rounded-xl bg-[#FAF7F2] border border-[#E7DFD5] text-xs text-[#2D2727]"
                   >
@@ -935,7 +935,7 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
                   </button>
                 </div>
 
-                {currentSlide.imageUrl && (
+                {currentSlide?.imageUrl && (
                   <button
                     onClick={() => updateCurrentSlide({ imageUrl: undefined })}
                     className="w-full py-1.5 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-[11px]"
@@ -1022,17 +1022,17 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
             {/* The Physical Slide Paper Sheet */}
             <div
               className={`relative w-full max-w-2xl min-h-[560px] rounded-3xl p-8 sm:p-10 shadow-polaroid border border-black/10 transition-all ${
-                currentSlide.paperStyle === 'ruled'
+                currentSlide?.paperStyle === 'ruled'
                   ? 'bg-notebook-ruled'
-                  : currentSlide.paperStyle === 'grid'
+                  : currentSlide?.paperStyle === 'grid'
                   ? 'bg-notebook-grid'
                   : ''
               }`}
-              style={{ backgroundColor: currentSlide.color || '#FFFDF9' }}
+              style={{ backgroundColor: currentSlide?.color || '#FFFDF9' }}
             >
               {/* Pushpin & Washi Tape */}
-              <WashiTape style={currentSlide.washiTape} />
-              <PushPin style={currentSlide.pinType} />
+              <WashiTape style={currentSlide?.washiTape || 'polka'} />
+              <PushPin style={currentSlide?.pinType || 'red-pin'} />
 
               {/* Slide Number Watermark */}
               <div className="absolute top-4 right-6 text-xs font-mono font-bold text-black/25">
@@ -1042,14 +1042,14 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
               {/* Slide Title */}
               <input
                 type="text"
-                value={currentSlide.title || ''}
+                value={currentSlide?.title || ''}
                 onChange={(e) => updateCurrentSlide({ title: e.target.value })}
                 placeholder="Slide Heading or Concept..."
-                className={`w-full text-2xl font-bold bg-transparent border-none focus:outline-none mb-3 text-[#2D2727] ${currentSlide.fontFamily}`}
+                className={`w-full text-2xl font-bold bg-transparent border-none focus:outline-none mb-3 text-[#2D2727] ${currentSlide?.fontFamily || 'font-caveat'}`}
               />
 
               {/* Uploaded Image if any */}
-              {currentSlide.imageUrl && (
+              {currentSlide?.imageUrl && (
                 <div className="relative rounded-2xl overflow-hidden max-h-56 mb-4 shadow-xs border border-black/10 group">
                   <img
                     src={currentSlide.imageUrl}
@@ -1061,23 +1061,23 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
 
               {/* Main Content Area (Keypad Typing) */}
               <textarea
-                value={currentSlide.content || ''}
+                value={currentSlide?.content || ''}
                 onChange={(e) => updateCurrentSlide({ content: e.target.value })}
                 rows={6}
                 placeholder="Type your notes, formulas, thoughts, or explanations with your chosen handwriting font..."
                 className={`w-full bg-transparent border-none focus:outline-none resize-none leading-relaxed text-[#2D2727] ${
-                  currentSlide.fontFamily
+                  currentSlide?.fontFamily || 'font-caveat'
                 } ${
-                  currentSlide.fontSize === 'sm'
+                  currentSlide?.fontSize === 'sm'
                     ? 'text-sm'
-                    : currentSlide.fontSize === 'xl'
+                    : currentSlide?.fontSize === 'xl'
                     ? 'text-xl'
                     : 'text-base'
                 }`}
               />
 
               {/* Interactive Slide Sticky Notes pinned on this slide */}
-              {currentSlide.stickies && currentSlide.stickies.length > 0 && (
+              {currentSlide?.stickies && currentSlide.stickies.length > 0 && (
                 <div className="space-y-3 mt-4 pt-3 border-t border-black/10">
                   <div className="text-[10px] font-mono uppercase text-black/40">Pinned Sticky Notes:</div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1109,7 +1109,7 @@ export const SlideNoteStudio: React.FC<SlideNoteStudioProps> = ({
               )}
 
               {/* Cute stickers stamped on slide */}
-              {currentSlide.stickers && currentSlide.stickers.length > 0 && (
+              {currentSlide?.stickers && currentSlide.stickers.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-4 pt-2">
                   {currentSlide.stickers.map((stk) => (
                     <span key={stk.id} className="text-xl filter drop-shadow-xs select-none">
