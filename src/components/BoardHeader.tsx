@@ -13,7 +13,7 @@ import {
   Heart,
   Lightbulb,
 } from 'lucide-react';
-import { BackgroundTheme, Board } from '../types/note';
+import { BackgroundTheme, Board, UserProfile } from '../types/note';
 
 interface BoardHeaderProps {
   boards: Board[];
@@ -31,6 +31,8 @@ interface BoardHeaderProps {
   availableTags: string[];
   onlyFavorites: boolean;
   onToggleOnlyFavorites: () => void;
+  currentUser: UserProfile;
+  onOpenProfileModal: () => void;
   onOpenNewNote: () => void;
   onOpenDrawing: () => void;
   onOpenWebUpload: () => void;
@@ -64,6 +66,8 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
   availableTags,
   onlyFavorites,
   onToggleOnlyFavorites,
+  currentUser,
+  onOpenProfileModal,
   onOpenNewNote,
   onOpenDrawing,
   onOpenWebUpload,
@@ -106,8 +110,19 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
             </div>
           </div>
 
+          {/* Personalized Public Creator Button */}
+          <button
+            onClick={onOpenProfileModal}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FAF7F2] hover:bg-[#F2ECE4] border border-[#E7DFD5] text-xs font-semibold text-[#3C2F2B] transition-all hover:scale-102"
+            title="Personalize your public creator profile"
+          >
+            <span className="text-sm">{currentUser.avatar || '🌸'}</span>
+            <span className="hidden sm:inline font-playfair font-bold">{currentUser.name || 'shimin'}</span>
+            <span className="text-[10px] text-[#8C7A70] font-mono hidden md:inline">{currentUser.handle || '@public'}</span>
+          </button>
+
           {/* Board Selector Pills */}
-          <div className="hidden md:flex items-center gap-1.5 pl-3 border-l border-[#ECE3D8]">
+          <div className="hidden lg:flex items-center gap-1.5 pl-3 border-l border-[#ECE3D8]">
             {boards.map((b) => (
               <button
                 key={b.id}

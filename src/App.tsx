@@ -6,22 +6,37 @@ import {
   FontOption,
   PinItem,
   PinStyle,
+  UserProfile,
   WashiTapeStyle,
 } from './types/note';
-import { INITIAL_BOARDS, INITIAL_PINS } from './utils/initialData';
+import { INITIAL_BOARDS, INITIAL_PINS, INITIAL_USER_PROFILE } from './utils/initialData';
 import { BoardHeader } from './components/BoardHeader';
 import { MasonryGrid } from './components/MasonryGrid';
 import { FreeformCanvas } from './components/FreeformCanvas';
-import { NoteEditorModal } from './components/NoteEditorModal';
+import { SlideNoteStudio } from './components/SlideNoteStudio';
+import { SlideViewerModal } from './components/SlideViewerModal';
+import { UserProfileModal } from './components/UserProfileModal';
 import { DrawingCanvasModal } from './components/DrawingCanvasModal';
 import { WebUploadModal } from './components/WebUploadModal';
 import { AIExplainerModal } from './components/AIExplainerModal';
-import { Sparkles, MessageSquareHeart, PenTool, Globe, Plus } from 'lucide-react';
+import { Sparkles, PenTool, Globe, Plus, Layers, User } from 'lucide-react';
 
-const STORAGE_KEY_PINS = 'pinnotes_aesthetic_pins_v1';
-const STORAGE_KEY_BOARDS = 'pinnotes_aesthetic_boards_v1';
+const STORAGE_KEY_PINS = 'pinnotes_aesthetic_pins_v2';
+const STORAGE_KEY_BOARDS = 'pinnotes_aesthetic_boards_v2';
+const STORAGE_KEY_USER = 'pinnotes_user_profile_v2';
 
 export default function App() {
+  // User Profile state (personalized for public notes)
+  const [currentUser, setCurrentUser] = useState<UserProfile>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_USER);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error(e);
+    }
+    return INITIAL_USER_PROFILE;
+  });
+
   // Boards state
   const [boards, setBoards] = useState<Board[]>(() => {
     try {
@@ -63,6 +78,14 @@ export default function App() {
     }
   }, [boards]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [currentUser]);
+
   // Active theme & view mode
   const currentBoard = boards.find((b) => b.id === activeBoardId) || boards[0];
   const [activeTheme, setActiveTheme] = useState<BackgroundTheme>(
@@ -76,8 +99,13 @@ export default function App() {
   const [onlyFavorites, setOnlyFavorites] = useState(false);
 
   // Modals state
-  const [isNoteEditorOpen, setIsNoteEditorOpen] = useState(false);
-  const [editingNote, setEditingNote] = useState<PinItem | null>(null);
+  const [isSlideStudioOpen, setIsSlideStudioOpen] = useState(false);
+  const [studioInitialNote, setStudioInitialNote] = useState<PinItem | null>(null);
+
+  const [isSlideViewerOpen, setIsSlideViewerOpen] = useState(false);
+  const [viewingSlidePin, setViewingSlidePin] = useState<PinItem | null>(null);
+
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const [isDrawingOpen, setIsDrawingOpen] = useState(false);
   const [editingSketchNote, setEditingSketchNote] = useState<PinItem | null>(null);
@@ -92,10 +120,10 @@ export default function App() {
   // Trigger celebration confetti
   const fireConfetti = () => {
     confetti({
-      particleCount: 45,
-      spread: 60,
+      particleCount: 50,
+      spread: 65,
       origin: { y: 0.8 },
-      colors: ['#E11D48', '#FECDD3', '#FEF08A', '#BBF7D0', '#E9D5FF'],
+      colors: ['#E11D48', '#FECDD3', '#FEF08A', '#BBF7D0', '#E9D5FF', '#FED7AA'],
     });
   };
 
@@ -155,40 +183,45 @@ export default function App() {
     });
   }, [currentBoardPins, onlyFavorites, selectedTag, searchQuery]);
 
-  // Handlers for Pins
-  const handleSaveNote = (noteData: Partial<PinItem>) => {
-    if (editingNote) {
+  // Save Note / Slide Deck from Studio
+  const handleSaveStudioNote = (noteData: Partial<PinItem>) => {
+    if (studioInitialNote) {
       // Update existing
       setPins((prev) =>
-        prev.map((p) => (p.id === editingNote.id ? { ...p, ...noteData } : p))
+        prev.map((p) => (p.id === studioInitialNote.id ? { ...p, ...noteData, author: currentUser } : p))
       );
     } else {
       // Create new
       const newPin: PinItem = {
-        id: `pin-${Date.now()}-${Math.random()}`,
+        id: `pin-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         boardId: activeBoardId,
-        type: noteData.type || 'sticky',
+        type: noteData.type || (noteData.slides && noteData.slides.length > 1 ? 'slide-deck' : 'sticky'),
         title: noteData.title || 'Untitled Note',
         content: noteData.content || '',
-        color: noteData.color || '#FEF08A',
+        color: noteData.color || '#FFFDF9',
         fontFamily: noteData.fontFamily || 'font-caveat',
         fontSize: noteData.fontSize || 'lg',
         washiTape: noteData.washiTape || 'polka',
         pinType: noteData.pinType || 'red-pin',
-        rotation: (Math.random() - 0.5) * 3, // slight natural tilt
+        rotation: (Math.random() - 0.5) * 3,
         position: {
           x: 60 + Math.floor(Math.random() * 400),
           y: 80 + Math.floor(Math.random() * 300),
         },
-        size: { width: 320, height: 320 },
-        tags: noteData.tags || ['Note'],
+        size: { width: 340, height: 380 },
+        tags: noteData.tags || ['AestheticNote'],
         createdAt: Date.now(),
         checklist: noteData.checklist,
+        slides: noteData.slides,
+        drawingData: noteData.drawingData,
+        imageUrl: noteData.imageUrl,
+        author: currentUser,
+        isPublic: noteData.isPublic ?? true,
       };
       setPins((prev) => [newPin, ...prev]);
       fireConfetti();
     }
-    setEditingNote(null);
+    setStudioInitialNote(null);
   };
 
   const handleDeletePin = (id: string) => {
@@ -268,6 +301,7 @@ export default function App() {
         size: { width: 340, height: 380 },
         tags: ['Handdrawn', 'Doodle'],
         createdAt: Date.now(),
+        author: currentUser,
       };
       setPins((prev) => [newPin, ...prev]);
       fireConfetti();
@@ -308,6 +342,7 @@ export default function App() {
       size: { width: 320, height: 420 },
       tags: pinData.tags,
       createdAt: Date.now(),
+      author: currentUser,
     };
     setPins((prev) => [newPin, ...prev]);
     fireConfetti();
@@ -317,6 +352,12 @@ export default function App() {
   const handleExplainAI = (pin: PinItem) => {
     setAiTargetNote(pin);
     setIsAIExplainerOpen(true);
+  };
+
+  // Open Slide Viewer
+  const handleOpenSlideViewer = (pin: PinItem) => {
+    setViewingSlidePin(pin);
+    setIsSlideViewerOpen(true);
   };
 
   // Pin an AI explanation directly as a new pastel note on board
@@ -341,6 +382,7 @@ export default function App() {
       tags: ['AIExplained', 'StudyNotes'],
       createdAt: Date.now(),
       aiExplanation: text,
+      author: currentUser,
     };
     setPins((prev) => [newPin, ...prev]);
     fireConfetti();
@@ -376,6 +418,7 @@ export default function App() {
           size: { width: 310, height: 300 },
           tags: item.tags || ['Inspiration'],
           createdAt: Date.now(),
+          author: currentUser,
         }));
         setPins((prev) => [...newPins, ...prev]);
         fireConfetti();
@@ -408,7 +451,7 @@ export default function App() {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 flex flex-col ${getBackgroundClass()}`}>
-      {/* Top Header & Board Controls */}
+      {/* Top Header & Board Controls with Creator Personalization */}
       <BoardHeader
         boards={boards}
         activeBoardId={activeBoardId}
@@ -425,9 +468,11 @@ export default function App() {
         availableTags={availableTags}
         onlyFavorites={onlyFavorites}
         onToggleOnlyFavorites={() => setOnlyFavorites(!onlyFavorites)}
+        currentUser={currentUser}
+        onOpenProfileModal={() => setIsProfileModalOpen(true)}
         onOpenNewNote={() => {
-          setEditingNote(null);
-          setIsNoteEditorOpen(true);
+          setStudioInitialNote(null);
+          setIsSlideStudioOpen(true);
         }}
         onOpenDrawing={() => handleOpenDrawing()}
         onOpenWebUpload={() => setIsWebUploadOpen(true)}
@@ -446,16 +491,17 @@ export default function App() {
             pins={filteredPins}
             onExplainAI={handleExplainAI}
             onEdit={(pin) => {
-              setEditingNote(pin);
-              setIsNoteEditorOpen(true);
+              setStudioInitialNote(pin);
+              setIsSlideStudioOpen(true);
             }}
             onDelete={handleDeletePin}
             onToggleFavorite={handleToggleFavorite}
             onOpenDrawing={handleOpenDrawing}
+            onOpenSlideViewer={handleOpenSlideViewer}
             onToggleCheckItem={handleToggleCheckItem}
             onCreateNewNote={() => {
-              setEditingNote(null);
-              setIsNoteEditorOpen(true);
+              setStudioInitialNote(null);
+              setIsSlideStudioOpen(true);
             }}
           />
         ) : (
@@ -464,33 +510,34 @@ export default function App() {
             onUpdatePosition={handleUpdatePosition}
             onExplainAI={handleExplainAI}
             onEdit={(pin) => {
-              setEditingNote(pin);
-              setIsNoteEditorOpen(true);
+              setStudioInitialNote(pin);
+              setIsSlideStudioOpen(true);
             }}
             onDelete={handleDeletePin}
             onToggleFavorite={handleToggleFavorite}
             onOpenDrawing={handleOpenDrawing}
+            onOpenSlideViewer={handleOpenSlideViewer}
             onToggleCheckItem={handleToggleCheckItem}
             onCreateNewNote={() => {
-              setEditingNote(null);
-              setIsNoteEditorOpen(true);
+              setStudioInitialNote(null);
+              setIsSlideStudioOpen(true);
             }}
           />
         )}
       </main>
 
       {/* Floating Bottom Quick Action Dock */}
-      <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 bg-[#FFFDF9]/90 backdrop-blur-md px-4 py-2 rounded-full border border-[#ECE3D8] shadow-xl flex items-center gap-2">
+      <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 bg-[#FFFDF9]/92 backdrop-blur-md px-4 py-2 rounded-full border border-[#ECE3D8] shadow-xl flex items-center gap-2">
         <button
           onClick={() => {
-            setEditingNote(null);
-            setIsNoteEditorOpen(true);
+            setStudioInitialNote(null);
+            setIsSlideStudioOpen(true);
           }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#E11D48] text-white text-xs font-bold shadow-xs hover:bg-[#BE123C] transition-all hover:scale-105"
-          title="New Pastel Sticky Note"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#E11D48] text-white text-xs font-bold shadow-xs hover:bg-[#BE123C] transition-all hover:scale-105"
+          title="Create Multi-Slide Aesthetic Note"
         >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Sticky Note</span>
+          <Layers className="w-3.5 h-3.5" />
+          <span>Create Note & Slide</span>
         </button>
 
         <button
@@ -511,7 +558,16 @@ export default function App() {
           <span>Web Clip</span>
         </button>
 
-        <div className="w-px h-4 bg-stone-300 mx-1" />
+        <button
+          onClick={() => setIsProfileModalOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-[#F2ECE4] text-[#3C2F2B] text-xs font-semibold transition-all hover:scale-105"
+          title="Personalize Profile for Public"
+        >
+          <span>{currentUser.avatar || '🌸'}</span>
+          <span className="hidden sm:inline">Profile</span>
+        </button>
+
+        <div className="w-px h-4 bg-stone-300 mx-0.5" />
 
         <button
           onClick={() => {
@@ -526,17 +582,46 @@ export default function App() {
         </button>
       </div>
 
-      {/* Modals */}
-      <NoteEditorModal
-        isOpen={isNoteEditorOpen}
+      {/* Slide Note Studio (Full Slide Creation: Type, Draw, Stickies, Upload, AI) */}
+      <SlideNoteStudio
+        isOpen={isSlideStudioOpen}
         onClose={() => {
-          setIsNoteEditorOpen(false);
-          setEditingNote(null);
+          setIsSlideStudioOpen(false);
+          setStudioInitialNote(null);
         }}
-        onSave={handleSaveNote}
-        initialNote={editingNote}
+        onSave={handleSaveStudioNote}
+        initialNote={studioInitialNote}
+        currentUser={currentUser}
+        onEditProfile={() => setIsProfileModalOpen(true)}
       />
 
+      {/* Slide Presentation Carousel Viewer */}
+      <SlideViewerModal
+        isOpen={isSlideViewerOpen}
+        onClose={() => {
+          setIsSlideViewerOpen(false);
+          setViewingSlidePin(null);
+        }}
+        pin={viewingSlidePin}
+        onEditInStudio={(pin) => {
+          setStudioInitialNote(pin);
+          setIsSlideStudioOpen(true);
+        }}
+        onExplainAI={handleExplainAI}
+      />
+
+      {/* Creator Profile Personalization Modal */}
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        currentUser={currentUser}
+        onSave={(updated) => {
+          setCurrentUser(updated);
+          fireConfetti();
+        }}
+      />
+
+      {/* Freehand Drawing Modal */}
       <DrawingCanvasModal
         isOpen={isDrawingOpen}
         onClose={() => {
@@ -548,12 +633,14 @@ export default function App() {
         initialTitle={editingSketchNote?.title}
       />
 
+      {/* Web & Media Upload Modal */}
       <WebUploadModal
         isOpen={isWebUploadOpen}
         onClose={() => setIsWebUploadOpen(false)}
         onSavePin={handleSaveWebPin}
       />
 
+      {/* Dedicated AI Explainer Companion Modal */}
       <AIExplainerModal
         isOpen={isAIExplainerOpen}
         onClose={() => {

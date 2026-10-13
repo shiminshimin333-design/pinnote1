@@ -8,7 +8,8 @@ import {
   PenTool,
   CheckSquare,
   Square,
-  Share2,
+  BookOpen,
+  Layers,
 } from 'lucide-react';
 import { PinItem } from '../types/note';
 import { PushPin, WashiTape } from './PinOrTack';
@@ -20,6 +21,7 @@ interface PinCardProps {
   onDelete: (id: string) => void;
   onToggleFavorite: (id: string) => void;
   onOpenDrawing?: (pin: PinItem) => void;
+  onOpenSlideViewer?: (pin: PinItem) => void;
   onToggleCheckItem?: (pinId: string, itemId: string) => void;
   isCanvasMode?: boolean;
 }
@@ -31,14 +33,23 @@ export const PinCard: React.FC<PinCardProps> = ({
   onDelete,
   onToggleFavorite,
   onOpenDrawing,
+  onOpenSlideViewer,
   onToggleCheckItem,
   isCanvasMode = false,
 }) => {
   const rotationStyle = isCanvasMode ? undefined : { transform: `rotate(${pin.rotation || 0}deg)` };
+  const hasMultipleSlides = Boolean(pin.slides && pin.slides.length > 1);
+
+  const handleCardClick = () => {
+    if (onOpenSlideViewer && (pin.slides || pin.type === 'slide-deck')) {
+      onOpenSlideViewer(pin);
+    }
+  };
 
   return (
     <div
-      className={`group relative rounded-3xl transition-all duration-300 hover:z-30 ${
+      onClick={handleCardClick}
+      className={`group relative rounded-3xl transition-all duration-300 hover:z-30 cursor-pointer ${
         isCanvasMode
           ? 'shadow-pin hover:shadow-2xl'
           : 'shadow-pin hover:shadow-xl hover:-translate-y-1 hover:rotate-0'
@@ -51,6 +62,14 @@ export const PinCard: React.FC<PinCardProps> = ({
       {/* Decorative Washi Tape & PushPin */}
       <WashiTape style={pin.washiTape} />
       <PushPin style={pin.pinType} />
+
+      {/* Slide Deck Badge if multi-slide */}
+      {hasMultipleSlides && (
+        <div className="absolute top-3 left-4 z-20 flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-xs text-white text-[10px] font-mono font-bold shadow-xs">
+          <Layers className="w-3 h-3 text-[#FDA4AF]" />
+          <span>{pin.slides?.length} SLIDES</span>
+        </div>
+      )}
 
       {/* Floating Action Bar (visible on card hover, Pinterest style) */}
       <div className="absolute top-2 right-2 z-40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1 bg-white/90 backdrop-blur-xs p-1 rounded-full shadow-md border border-stone-200">
@@ -78,6 +97,19 @@ export const PinCard: React.FC<PinCardProps> = ({
           </button>
         )}
 
+        {onOpenSlideViewer && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenSlideViewer(pin);
+            }}
+            className="p-1.5 rounded-full hover:bg-stone-100 text-[#3C2F2B] transition-transform hover:scale-110"
+            title="Present Slides"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+          </button>
+        )}
+
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -97,7 +129,7 @@ export const PinCard: React.FC<PinCardProps> = ({
             onEdit(pin);
           }}
           className="p-1.5 rounded-full hover:bg-stone-100 text-stone-600 transition-transform hover:scale-110"
-          title="Edit Note"
+          title="Edit Slide Studio"
         >
           <Edit3 className="w-3.5 h-3.5" />
         </button>
@@ -115,7 +147,16 @@ export const PinCard: React.FC<PinCardProps> = ({
       </div>
 
       {/* Card Content based on type */}
-      <div className="p-5 pt-7">
+      <div className="p-5 pt-8">
+        {/* Creator Attribution if available */}
+        {pin.author && (
+          <div className="flex items-center gap-1.5 text-[11px] text-[#7A6961] mb-2 font-medium">
+            <span>{pin.author.avatar || '🌸'}</span>
+            <span className="font-semibold">{pin.author.name}</span>
+            <span className="text-[10px] text-[#9E8E86] font-mono">{pin.author.handle}</span>
+          </div>
+        )}
+
         {/* POLAROID PHOTO TYPE */}
         {pin.type === 'photo' && pin.imageUrl && (
           <div className="space-y-3">
@@ -150,7 +191,10 @@ export const PinCard: React.FC<PinCardProps> = ({
             )}
             {pin.drawingData && (
               <div
-                onClick={() => onOpenDrawing && onOpenDrawing(pin)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenDrawing && onOpenDrawing(pin);
+                }}
                 className="rounded-2xl overflow-hidden bg-white/70 border border-stone-200/60 p-2 cursor-pointer hover:border-[#E11D48]/50 transition-all shadow-2xs group/canvas"
                 title="Click to edit drawing"
               >
@@ -169,6 +213,47 @@ export const PinCard: React.FC<PinCardProps> = ({
               <p className={`text-sm text-[#4A3E39] leading-relaxed ${pin.fontFamily}`}>
                 {pin.content}
               </p>
+            )}
+          </div>
+        )}
+
+        {/* SLIDE DECK TYPE */}
+        {pin.type === 'slide-deck' && (
+          <div className="space-y-3">
+            {pin.imageUrl && (
+              <div className="overflow-hidden rounded-2xl bg-stone-100 shadow-inner mb-2">
+                <img
+                  src={pin.imageUrl}
+                  alt={pin.title}
+                  className="w-full h-auto object-cover max-h-64"
+                />
+              </div>
+            )}
+            {pin.drawingData && (
+              <div className="rounded-2xl overflow-hidden bg-white/60 border border-stone-200 p-2 shadow-2xs mb-2">
+                <img
+                  src={pin.drawingData}
+                  alt="Slide sketch"
+                  className="w-full h-auto object-contain max-h-56"
+                />
+              </div>
+            )}
+            {pin.title && (
+              <h3 className={`text-xl font-bold text-[#2D2727] ${pin.fontFamily}`}>
+                {pin.title}
+              </h3>
+            )}
+            {pin.content && (
+              <p className={`text-sm text-[#4A3E39] leading-relaxed line-clamp-4 ${pin.fontFamily}`}>
+                {pin.content}
+              </p>
+            )}
+
+            {/* Preview of sticky on slide 1 if any */}
+            {pin.slides?.[0]?.stickies && pin.slides[0].stickies.length > 0 && (
+              <div className="p-2.5 rounded-xl border border-black/10 bg-[#FEF08A]/80 text-xs font-indie line-clamp-2 shadow-2xs">
+                📌 {pin.slides[0].stickies[0].text}
+              </div>
             )}
           </div>
         )}
@@ -194,6 +279,7 @@ export const PinCard: React.FC<PinCardProps> = ({
                 href={pin.webMeta?.url}
                 target="_blank"
                 rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
                 className="hover:underline"
               >
                 {pin.title}
@@ -220,7 +306,10 @@ export const PinCard: React.FC<PinCardProps> = ({
                 {pin.checklist.map((item) => (
                   <div
                     key={item.id}
-                    onClick={() => onToggleCheckItem && onToggleCheckItem(pin.id, item.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleCheckItem && onToggleCheckItem(pin.id, item.id);
+                    }}
                     className="flex items-start gap-2.5 cursor-pointer group/check"
                   >
                     <button
@@ -291,7 +380,10 @@ export const PinCard: React.FC<PinCardProps> = ({
 
           {/* Quick AI Explain button */}
           <button
-            onClick={() => onExplainAI(pin)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onExplainAI(pin);
+            }}
             className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/80 hover:bg-[#FFE4E6] text-[11px] font-semibold text-[#E11D48] border border-rose-200 shadow-2xs transition-all hover:scale-105 active:scale-95 shrink-0"
             title="Ask AI to explain this"
           >

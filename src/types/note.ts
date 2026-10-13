@@ -1,4 +1,4 @@
-export type NoteType = 'sticky' | 'sketch' | 'photo' | 'weblink' | 'checklist' | 'quote';
+export type NoteType = 'sticky' | 'sketch' | 'photo' | 'weblink' | 'checklist' | 'quote' | 'slide-deck';
 
 export type FontOption =
   | 'font-caveat'
@@ -29,6 +29,49 @@ export interface WebMeta {
   image?: string | null;
 }
 
+export interface SlideSticky {
+  id: string;
+  text: string;
+  color: string;
+  fontFamily: FontOption;
+  position: { x: number; y: number };
+  rotation: number;
+  washiTape?: WashiTapeStyle;
+}
+
+export interface SlideSticker {
+  id: string;
+  emoji: string;
+  position: { x: number; y: number };
+  size?: number;
+}
+
+export interface NoteSlide {
+  id: string;
+  title: string;
+  content: string;
+  fontFamily: FontOption;
+  fontSize: 'sm' | 'base' | 'lg' | 'xl';
+  color: string;
+  paperStyle: 'linen' | 'ruled' | 'grid' | 'cream' | 'kraft' | 'blush';
+  washiTape: WashiTapeStyle;
+  pinType: PinStyle;
+  drawingData?: string; // handwriting strokes base64
+  imageUrl?: string;
+  stickies?: SlideSticky[];
+  stickers?: SlideSticker[];
+  checklist?: ChecklistItem[];
+  aiNotes?: string;
+}
+
+export interface UserProfile {
+  name: string;
+  handle: string;
+  avatar: string;
+  bio: string;
+  aestheticBadge?: string;
+}
+
 export interface PinItem {
   id: string;
   boardId: string;
@@ -47,11 +90,14 @@ export interface PinItem {
   imageUrl?: string;
   webMeta?: WebMeta;
   checklist?: ChecklistItem[];
+  slides?: NoteSlide[]; // For multi-slide visual notes!
   tags: string[];
   createdAt: number;
   favorite?: boolean;
   zIndex?: number;
   aiExplanation?: string;
+  author?: UserProfile;
+  isPublic?: boolean;
 }
 
 export interface Board {

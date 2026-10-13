@@ -10,6 +10,7 @@ interface MasonryGridProps {
   onDelete: (id: string) => void;
   onToggleFavorite: (id: string) => void;
   onOpenDrawing: (pin?: PinItem) => void;
+  onOpenSlideViewer?: (pin: PinItem) => void;
   onToggleCheckItem: (pinId: string, itemId: string) => void;
   onCreateNewNote: () => void;
 }
@@ -21,6 +22,7 @@ export const MasonryGrid: React.FC<MasonryGridProps> = ({
   onDelete,
   onToggleFavorite,
   onOpenDrawing,
+  onOpenSlideViewer,
   onToggleCheckItem,
   onCreateNewNote,
 }) => {
@@ -59,6 +61,7 @@ export const MasonryGrid: React.FC<MasonryGridProps> = ({
               onDelete={onDelete}
               onToggleFavorite={onToggleFavorite}
               onOpenDrawing={onOpenDrawing}
+              onOpenSlideViewer={onOpenSlideViewer}
               onToggleCheckItem={onToggleCheckItem}
             />
           </div>
